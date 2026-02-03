@@ -13,7 +13,7 @@ services:
       # X11 socket (Linux)
       - /tmp/.X11-unix:/tmp/.X11-unix
     ports:
-      - "18789:18789"
+      - "${HOST_PORT:-18789}:${GATEWAY_PORT:-18789}"
     profiles: ["full"]
 
   clawbot-browser:
@@ -28,5 +28,5 @@ services:
       - /mnt/wslg:/mnt/wslg
       - /tmp/.X11-unix:/tmp/.X11-unix
     ports:
-      - "18789:18789"
+      - "${HOST_PORT:-18789}:${GATEWAY_PORT:-18789}"
     profiles: ["browser"]

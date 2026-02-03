@@ -5,11 +5,7 @@ UI_MODE="${UI_MODE:-full}"   # full | browser
 OPENCLAW_HOME="${OPENCLAW_HOME:-/data}"
 OPENCLAW_CONFIG_PATH="${OPENCLAW_CONFIG_PATH:-$OPENCLAW_HOME/openclaw.json}"
 OPENCLAW_WORKSPACE="${OPENCLAW_WORKSPACE:-/workspace}"
-
-# Export OpenRouter key if present
-if [ -n "${OPENROUTER_API_KEY:-}" ]; then
-  export OPENCLAW_OPENROUTER_API_KEY="$OPENROUTER_API_KEY"
-fi
+GATEWAY_PORT="${GATEWAY_PORT:-18789}"
 
 mkdir -p "$OPENCLAW_HOME" "$OPENCLAW_WORKSPACE"
 
@@ -27,15 +23,13 @@ if [ -d /mnt/wslg/.X11-unix ]; then
   export DISPLAY="${DISPLAY:-:0}"
 fi
 
+# Export OpenRouter key if present
+if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+  export OPENCLAW_OPENROUTER_API_KEY="$OPENROUTER_API_KEY"
+fi
+
 # Build OpenClaw config if missing or forced
 if [ ! -f "$OPENCLAW_CONFIG_PATH" ] || [ "${OPENCLAW_CONFIG_REWRITE:-false}" = "true" ]; then
-  GATEWAY_TOKEN="${OPENCLAW_GATEWAY_TOKEN:-}"
-  MODEL_PRIMARY="${OPENCLAW_MODEL:-openrouter/openai/gpt-5.2-codex}"
-  TELEGRAM_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
-  TELEGRAM_DM_POLICY="${TELEGRAM_DM_POLICY:-pairing}"
-  TELEGRAM_GROUP_POLICY="${TELEGRAM_GROUP_POLICY:-open}"
-  TELEGRAM_REQUIRE_MENTION="${TELEGRAM_REQUIRE_MENTION:-false}"
-
   mkdir -p "$(dirname "$OPENCLAW_CONFIG_PATH")"
 
   python3 - <<PY
@@ -49,7 +43,7 @@ cfg = {
     }
   },
   "gateway": {
-    "port": 18789,
+    "port": int(os.environ.get("GATEWAY_PORT", "18789")),
     "bind": "0.0.0.0",
     "auth": {"mode": "token", "token": os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")}
   }
@@ -67,17 +61,17 @@ if telegram_token:
     }
   }
 
-path = os.environ.get("OPENCLAW_CONFIG_PATH")
+path = os.environ.get("OPENCLAW_CONFIG_PATH", "/data/openclaw.json")
 with open(path, "w") as f:
   json.dump(cfg, f, indent=2)
 PY
 fi
 
-# Start OpenClaw gateway
-OPENCLAW_HOME="$OPENCLAW_HOME" openclaw gateway start || true
+# Start OpenClaw gateway in foreground (no systemd in containers)
+openclaw gateway run --bind custom --port "$GATEWAY_PORT" --allow-unconfigured --force >/var/log/openclaw-gateway.log 2>&1 &
 
 # Open dashboard in Chrome
-DASHBOARD_URL="http://127.0.0.1:18789/"
+DASHBOARD_URL="http://127.0.0.1:${GATEWAY_PORT}/"
 if [ -n "${OPENCLAW_GATEWAY_TOKEN:-}" ]; then
   DASHBOARD_URL="${DASHBOARD_URL}?token=${OPENCLAW_GATEWAY_TOKEN}"
 fi
@@ -88,14 +82,13 @@ exec dbus-run-session -- bash -lc "
     xfce4-terminal --disable-server --title='Container' &
   fi
 
-  CHROME_FLAGS='--no-first-run --disable-dev-shm-usage --user-data-dir=$HOME/.config/google-chrome --disable-features=UseOzonePlatform --ozone-platform=x11 $DASHBOARD_URL'
-  if [ \"$(id -u)\" = \"0\" ]; then
-    CHROME_FLAGS='--no-sandbox '"$CHROME_FLAGS"
+  CHROME_FLAGS='--no-first-run --disable-dev-shm-usage --user-data-dir=\$HOME/.config/google-chrome --disable-features=UseOzonePlatform --ozone-platform=x11 $DASHBOARD_URL'
+  if [ \"\$(id -u)\" = \"0\" ]; then
+    CHROME_FLAGS=\"--no-sandbox \$CHROME_FLAGS\"
   fi
 
-  (google-chrome-stable $CHROME_FLAGS >/tmp/chrome.log 2>&1 &) || true
+  (google-chrome-stable \$CHROME_FLAGS >/tmp/chrome.log 2>&1 &) || true
 
-  while pgrep -x xfce4-terminal >/dev/null || pgrep -x chrome >/dev/null || pgrep -x google-chrome >/dev/null; do
-    sleep 1
-  done
+  # Keep container alive even if browser exits
+  tail -f /dev/null
 "
