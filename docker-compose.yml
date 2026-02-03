@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  clawbot-full:
+    build: .
+    container_name: clawbot-full
+    env_file: .env
+    environment:
+      - UI_MODE=full
+    volumes:
+      - ./data:/data
+      - ./workspace:/workspace
+      # WSLg (Windows) GUI
+      - /mnt/wslg:/mnt/wslg
+      # X11 socket (Linux)
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    ports:
+      - "18789:18789"
+    profiles: ["full"]
+
+  clawbot-browser:
+    build: .
+    container_name: clawbot-browser
+    env_file: .env
+    environment:
+      - UI_MODE=browser
+    volumes:
+      - ./data:/data
+      - ./workspace:/workspace
+      - /mnt/wslg:/mnt/wslg
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    ports:
+      - "18789:18789"
+    profiles: ["browser"]
