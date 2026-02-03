@@ -20,8 +20,18 @@ docker compose --profile browser up --build
 
 Если .env не настроен, контейнер запустится, но модель работать не будет.
 
-Dashboard откроется в Chrome внутри контейнера: `http://127.0.0.1:${GATEWAY_PORT}/?token=...`
-Если порт 18789 занят на хосте — поставьте `HOST_PORT=18790` в `.env`.
+### Ссылки на dashboard
+
+**Если контейнер запускается напрямую на хосте (Windows/Linux):**
+```
+http://127.0.0.1:${HOST_PORT}/?token=<OPENCLAW_GATEWAY_TOKEN>
+```
+
+**Если контейнер запускается внутри другого контейнера (Docker-in-Docker):**
+- Внутри внешнего контейнера: `http://127.0.0.1:${HOST_PORT}/?token=<OPENCLAW_GATEWAY_TOKEN>`
+- С хоста: нужно пробросить порт внешнего контейнера: `-p ${HOST_PORT}:${HOST_PORT}`
+
+Если порт занят — поменяйте `HOST_PORT` в `.env`.
 
 ## .env
 
