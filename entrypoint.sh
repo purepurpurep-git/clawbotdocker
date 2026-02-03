@@ -6,6 +6,11 @@ OPENCLAW_HOME="${OPENCLAW_HOME:-/data}"
 OPENCLAW_CONFIG_PATH="${OPENCLAW_CONFIG_PATH:-$OPENCLAW_HOME/openclaw.json}"
 OPENCLAW_WORKSPACE="${OPENCLAW_WORKSPACE:-/workspace}"
 
+# Export OpenRouter key if present
+if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+  export OPENCLAW_OPENROUTER_API_KEY="$OPENROUTER_API_KEY"
+fi
+
 mkdir -p "$OPENCLAW_HOME" "$OPENCLAW_WORKSPACE"
 
 # XDG runtime for dbus
@@ -32,62 +37,40 @@ if [ ! -f "$OPENCLAW_CONFIG_PATH" ] || [ "${OPENCLAW_CONFIG_REWRITE:-false}" = "
   TELEGRAM_REQUIRE_MENTION="${TELEGRAM_REQUIRE_MENTION:-false}"
 
   mkdir -p "$(dirname "$OPENCLAW_CONFIG_PATH")"
-  cat > "$OPENCLAW_CONFIG_PATH" <<EOF
-{
-  "agents": {
-    "defaults": {
-      "model": { "primary": "$MODEL_PRIMARY" },
-      "workspace": "$OPENCLAW_WORKSPACE"
-    }
-  },
-  "gateway": {
-    "port": 18789,
-    "bind": "0.0.0.0",
-    "auth": {
-      "mode": "token",
-      "token": "$GATEWAY_TOKEN"
-    }
-  },
-  "channels": {
-    "telegram": {
-      "enabled": ${TELEGRAM_TOKEN:+true}${TELEGRAM_TOKEN:+' '}
-    }
-  }
-}
-EOF
 
-  # If telegram token exists, inject config with minimal policies
-  if [ -n "$TELEGRAM_TOKEN" ]; then
-    cat > "$OPENCLAW_CONFIG_PATH" <<EOF
-{
+  python3 - <<PY
+import json, os
+
+cfg = {
   "agents": {
     "defaults": {
-      "model": { "primary": "$MODEL_PRIMARY" },
-      "workspace": "$OPENCLAW_WORKSPACE"
+      "model": {"primary": os.environ.get("OPENCLAW_MODEL", "openrouter/openai/gpt-5.2-codex")},
+      "workspace": os.environ.get("OPENCLAW_WORKSPACE", "/workspace")
     }
   },
   "gateway": {
     "port": 18789,
     "bind": "0.0.0.0",
-    "auth": {
-      "mode": "token",
-      "token": "$GATEWAY_TOKEN"
-    }
-  },
-  "channels": {
-    "telegram": {
-      "enabled": true,
-      "botToken": "$TELEGRAM_TOKEN",
-      "dmPolicy": "$TELEGRAM_DM_POLICY",
-      "groupPolicy": "$TELEGRAM_GROUP_POLICY",
-      "groups": {
-        "*": { "requireMention": $TELEGRAM_REQUIRE_MENTION }
-      }
-    }
+    "auth": {"mode": "token", "token": os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")}
   }
 }
-EOF
-  fi
+
+telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+if telegram_token:
+  cfg["channels"] = {
+    "telegram": {
+      "enabled": True,
+      "botToken": telegram_token,
+      "dmPolicy": os.environ.get("TELEGRAM_DM_POLICY", "pairing"),
+      "groupPolicy": os.environ.get("TELEGRAM_GROUP_POLICY", "open"),
+      "groups": {"*": {"requireMention": os.environ.get("TELEGRAM_REQUIRE_MENTION", "false").lower() == "true"}}
+    }
+  }
+
+path = os.environ.get("OPENCLAW_CONFIG_PATH")
+with open(path, "w") as f:
+  json.dump(cfg, f, indent=2)
+PY
 fi
 
 # Start OpenClaw gateway

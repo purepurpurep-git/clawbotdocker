@@ -8,8 +8,8 @@
 ## Быстрый старт
 
 ```bash
-cp .env.example .env
-# заполните OPENCLAW_GATEWAY_TOKEN и OPENROUTER_API_KEY
+./init.sh
+# отредактируйте .env (OPENCLAW_GATEWAY_TOKEN и OPENROUTER_API_KEY обязательны)
 
 # режим full (терминал + браузер)
 docker compose --profile full up --build
@@ -17,6 +17,8 @@ docker compose --profile full up --build
 # режим browser (только браузер)
 docker compose --profile browser up --build
 ```
+
+Если .env не настроен, контейнер запустится, но модель работать не будет.
 
 Dashboard откроется в Chrome внутри контейнера: `http://127.0.0.1:18789/?token=...`
 
@@ -36,8 +38,10 @@ Dashboard откроется в Chrome внутри контейнера: `http:
 ## GUI и буфер обмена
 
 Контейнер рассчитан на GUI через WSLg или X11:
-- **Windows + WSLg**: монтируем `/mnt/wslg` (уже в compose)
-- **Linux X11**: монтируем `/tmp/.X11-unix`
+- **Windows + WSLg**: монтируем `/mnt/wslg` (уже в compose). В WSLg общий буфер обмена с Windows работает автоматически.
+- **Linux X11**: монтируем `/tmp/.X11-unix`. Убедитесь, что X-сервер запущен (например, Xorg/Wayland с XWayland).
+
+Если вы запускаете контейнер НЕ в WSL/не в Linux с X11 — GUI окна не появятся.
 
 Для буфера обмена установлены `xclip` и `xsel`. Копирование из терминала не блокирует выполнение.
 
