@@ -30,26 +30,31 @@ if [ -n "${OPENROUTER_API_KEY:-}" ]; then
   export OPENCLAW_OPENROUTER_API_KEY="$OPENROUTER_API_KEY"
 fi
 
-# Build OpenClaw config if missing or forced
-if [ ! -f "$OPENCLAW_CONFIG_PATH" ] || [ "${OPENCLAW_CONFIG_REWRITE:-false}" = "true" ]; then
-  mkdir -p "$(dirname "$OPENCLAW_CONFIG_PATH")"
+# Build or sync OpenClaw config
+mkdir -p "$(dirname "$OPENCLAW_CONFIG_PATH")"
 
-  python3 - <<'PY'
+python3 - <<'PY'
 import json, os
+path = os.environ.get("OPENCLAW_CONFIG_PATH", "/data/openclaw.json")
 
-cfg = {
-  "agents": {
-    "defaults": {
-      "model": {"primary": os.environ.get("OPENCLAW_MODEL", "openrouter/openai/gpt-5.2-codex")},
-      "workspace": os.environ.get("OPENCLAW_WORKSPACE", "/workspace")
-    }
-  },
-  "gateway": {
-    "mode": "local",
-    "port": int(os.environ.get("GATEWAY_PORT", "18789")),
-    "bind": os.environ.get("OPENCLAW_GATEWAY_BIND", "custom"),
-    "auth": {"mode": "token", "token": os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")}
-  }
+if os.path.exists(path):
+  with open(path) as f:
+    cfg = json.load(f)
+else:
+  cfg = {}
+
+cfg.setdefault("agents", {}).setdefault("defaults", {})
+cfg["agents"]["defaults"]["model"] = {"primary": os.environ.get("OPENCLAW_MODEL", "openrouter/openai/gpt-5.2-codex")}
+cfg["agents"]["defaults"]["workspace"] = os.environ.get("OPENCLAW_WORKSPACE", "/workspace")
+
+cfg.setdefault("gateway", {})
+cfg["gateway"]["mode"] = "local"
+cfg["gateway"]["port"] = int(os.environ.get("GATEWAY_PORT", "18789"))
+# bind must be a mode (custom/lan/loopback/etc), not raw IP
+cfg["gateway"]["bind"] = os.environ.get("OPENCLAW_GATEWAY_BIND", "custom")
+cfg["gateway"]["auth"] = {
+  "mode": "token",
+  "token": os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")
 }
 
 telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
@@ -64,28 +69,12 @@ if telegram_token:
     }
   }
 
-path = os.environ.get("OPENCLAW_CONFIG_PATH", "/data/openclaw.json")
 with open(path, "w") as f:
   json.dump(cfg, f, indent=2)
 PY
-fi
-
-# Ensure bind mode is valid for OpenClaw (custom), not raw IP
-if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
-  python3 - <<'PY'
-import json, os
-path = os.environ.get("OPENCLAW_CONFIG_PATH", "/data/openclaw.json")
-with open(path) as f:
-  cfg = json.load(f)
-if cfg.get("gateway", {}).get("bind") == "0.0.0.0":
-  cfg.setdefault("gateway", {})["bind"] = "custom"
-with open(path, "w") as f:
-  json.dump(cfg, f, indent=2)
-PY
-fi
 
 # Start OpenClaw gateway in foreground (no systemd in containers)
-openclaw gateway run --bind custom --port "$GATEWAY_PORT" --allow-unconfigured --force >/var/log/openclaw-gateway.log 2>&1 &
+openclaw gateway run --bind "${OPENCLAW_GATEWAY_BIND:-custom}" --port "$GATEWAY_PORT" --allow-unconfigured --force >/var/log/openclaw-gateway.log 2>&1 &
 
 # Open dashboard in Chrome
 DASHBOARD_URL="http://127.0.0.1:${GATEWAY_PORT}/"
