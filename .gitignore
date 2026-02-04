@@ -3,3 +3,7 @@ memory.md
 
 # Secrets
 .env
+
+# Local data/workspace
+/data/
+/workspace/
