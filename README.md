@@ -11,7 +11,27 @@
 
 ---
 
-## Быстрый старт
+## 0) Что нужно заранее (самые простые шаги)
+
+1. **Установите Docker**
+   - Windows/macOS: Docker Desktop
+   - Linux: docker + docker‑compose
+
+2. **Проверьте, что Docker работает**
+   ```bash
+   docker --version
+   docker compose version
+   ```
+
+3. **Скачайте проект**
+   ```bash
+   git clone https://github.com/purepurpurep-git/clawbotdocker.git
+   cd clawbotdocker
+   ```
+
+---
+
+## 1) Быстрый старт (минимум действий)
 
 ```bash
 ./init.sh
@@ -45,7 +65,7 @@ docker run -it --rm --privileged \
 
 ---
 
-## Важно про порты и режимы
+## 3) Важно про порты и режимы
 
 `dev` и `user` используют один и тот же порт `${HOST_PORT}` — **их нельзя запускать одновременно**.
 Перед переключением остановите текущий режим:
@@ -57,7 +77,7 @@ docker compose --profile user down
 
 ---
 
-## Настройки (.env)
+## 4) Настройки (.env)
 
 Файл `.env` **не коммитится**. В репозитории есть `.env.example`.
 
@@ -76,7 +96,7 @@ docker compose --profile user down
 
 ---
 
-## Доступ к dashboard
+## 2) Где смотреть dashboard
 
 Если контейнер запущен на той же машине:
 ```
@@ -118,7 +138,9 @@ rm -rf data workspace
 
 Пересборка и запуск:
 ```bash
-docker compose --profile browser up --build
+docker compose --profile dev up --build
+# или
+# docker compose --profile user up --build
 ```
 
 ---
