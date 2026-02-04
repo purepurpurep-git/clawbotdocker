@@ -1,3 +1,3 @@
 # docker-compose.yml
 
-Compose профили для режимов dev/user (dev: GUI, user: без GUI).
+Compose профили dev/user. dev: GUI (терминал+Chrome), user: без GUI (ссылка в логе).

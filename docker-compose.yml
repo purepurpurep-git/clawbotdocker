@@ -4,7 +4,7 @@ services:
     container_name: clawbot-dev
     env_file: .env
     environment:
-      - UI_MODE=full
+      - UI_MODE=dev
     volumes:
       - ./data:/data
       - ./workspace:/workspace

@@ -84,18 +84,18 @@ fi
 
 exec dbus-run-session -- bash -lc "
   set -e
-  if [ '$UI_MODE' = 'dev' ]; then
+  if [ \"$UI_MODE\" = \"dev\" ]; then
     xfce4-terminal --disable-server --title='Container' &
   fi
 
-  if [ '$UI_MODE' = 'dev' ]; then
-    CHROME_FLAGS='--no-first-run --disable-dev-shm-usage --user-data-dir=\$HOME/.config/google-chrome --disable-features=UseOzonePlatform --ozone-platform=x11 $DASHBOARD_URL'
+  if [ \"$UI_MODE\" = \"dev\" ]; then
+    CHROME_FLAGS='--no-first-run --disable-dev-shm-usage --user-data-dir=/tmp/chrome-profile --disable-features=UseOzonePlatform --ozone-platform=x11 $DASHBOARD_URL'
     if [ \"\$(id -u)\" = \"0\" ]; then
       CHROME_FLAGS=\"--no-sandbox \$CHROME_FLAGS\"
     fi
     (google-chrome-stable \$CHROME_FLAGS >/tmp/chrome.log 2>&1 &) || true
   else
-    echo \"[clawbot] Dashboard: $DASHBOARD_URL\"
+    echo \"[clawbot] Dashboard: http://127.0.0.1:${HOST_PORT:-$GATEWAY_PORT}/?token=${OPENCLAW_GATEWAY_TOKEN:-}\"
     echo \"[clawbot] If you see 'pairing required': run ./pair.sh in the repo.\"
   fi
 
