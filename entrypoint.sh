@@ -7,6 +7,8 @@ OPENCLAW_CONFIG_PATH="${OPENCLAW_CONFIG_PATH:-$OPENCLAW_HOME/openclaw.json}"
 OPENCLAW_WORKSPACE="${OPENCLAW_WORKSPACE:-/workspace}"
 GATEWAY_PORT="${GATEWAY_PORT:-18789}"
 
+export OPENCLAW_HOME OPENCLAW_CONFIG_PATH OPENCLAW_WORKSPACE
+
 mkdir -p "$OPENCLAW_HOME" "$OPENCLAW_WORKSPACE"
 
 # XDG runtime for dbus
@@ -32,7 +34,7 @@ fi
 if [ ! -f "$OPENCLAW_CONFIG_PATH" ] || [ "${OPENCLAW_CONFIG_REWRITE:-false}" = "true" ]; then
   mkdir -p "$(dirname "$OPENCLAW_CONFIG_PATH")"
 
-  python3 - <<PY
+  python3 - <<'PY'
 import json, os
 
 cfg = {
@@ -43,8 +45,9 @@ cfg = {
     }
   },
   "gateway": {
+    "mode": "local",
     "port": int(os.environ.get("GATEWAY_PORT", "18789")),
-    "bind": "0.0.0.0",
+    "bind": os.environ.get("OPENCLAW_GATEWAY_BIND", "custom"),
     "auth": {"mode": "token", "token": os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")}
   }
 }
@@ -62,6 +65,20 @@ if telegram_token:
   }
 
 path = os.environ.get("OPENCLAW_CONFIG_PATH", "/data/openclaw.json")
+with open(path, "w") as f:
+  json.dump(cfg, f, indent=2)
+PY
+fi
+
+# Ensure bind mode is valid for OpenClaw (custom), not raw IP
+if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
+  python3 - <<'PY'
+import json, os
+path = os.environ.get("OPENCLAW_CONFIG_PATH", "/data/openclaw.json")
+with open(path) as f:
+  cfg = json.load(f)
+if cfg.get("gateway", {}).get("bind") == "0.0.0.0":
+  cfg.setdefault("gateway", {})["bind"] = "custom"
 with open(path, "w") as f:
   json.dump(cfg, f, indent=2)
 PY
