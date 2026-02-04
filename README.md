@@ -83,11 +83,32 @@ docker compose --profile user down
 
 **Обязательные переменные:**
 - `OPENCLAW_GATEWAY_TOKEN` — токен доступа в dashboard
-- `OPENROUTER_API_KEY` — ключ модели по умолчанию (OpenRouter)
+- **Один API‑ключ любого провайдера** (см. список ниже)
 
 **Рекомендуемые:**
 - `OPENCLAW_CONFIG_REWRITE=true` — всегда пересобирать openclaw.json из .env
 - `OPENCLAW_GATEWAY_BIND=custom` — чтобы gateway слушал 0.0.0.0 внутри контейнера
+
+**Доступные провайдеры (заполняйте только то, что используете):**
+- `OPENROUTER_API_KEY`
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `GEMINI_API_KEY`
+- `GROQ_API_KEY`
+- `MISTRAL_API_KEY`
+- `CEREBRAS_API_KEY`
+- `XAI_API_KEY`
+- `ZAI_API_KEY`
+- `AI_GATEWAY_API_KEY`
+- `OPENCODE_API_KEY`
+- `OPENCODE_ZEN_API_KEY`
+- `MOONSHOT_API_KEY`
+- `KIMI_API_KEY`
+- `MINIMAX_API_KEY`
+- `SYNTHETIC_API_KEY`
+- `VENICE_API_KEY`
+- `OLLAMA_API_KEY`
+- `XIAOMI_API_KEY`
 
 **Опциональные:**
 - `TELEGRAM_BOT_TOKEN`
