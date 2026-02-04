@@ -24,6 +24,23 @@ docker compose --profile dev up --build
 docker compose --profile user up --build
 ```
 
+### Привилегии
+
+Compose уже задаёт `privileged: true` для обоих режимов.
+Если запускаете вручную через `docker run`, используйте:
+
+```bash
+docker run -it --rm --privileged \
+  -p ${HOST_PORT:-18789}:${GATEWAY_PORT:-18789} \
+  -e DISPLAY=:0 -e WAYLAND_DISPLAY=wayland-0 \
+  -v /mnt/wslg:/mnt/wslg \
+  -v /mnt/wslg/.X11-unix:/tmp/.X11-unix \
+  -v "$(pwd)/data":/data \
+  -v "$(pwd)/workspace":/workspace \
+  -w /workspace \
+  clawbotdocker-clawbot-dev
+```
+
 Если .env не настроен, контейнер запустится, но модель работать не будет.
 
 ---

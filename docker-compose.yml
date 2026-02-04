@@ -14,6 +14,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
     ports:
       - "${HOST_PORT:-18789}:${GATEWAY_PORT:-18789}"
+    privileged: true
     profiles: ["dev"]
 
   clawbot-user:
@@ -29,4 +30,5 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
     ports:
       - "${HOST_PORT:-18789}:${GATEWAY_PORT:-18789}"
+    privileged: true
     profiles: ["user"]
