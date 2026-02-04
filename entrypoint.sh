@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UI_MODE="${UI_MODE:-full}"   # full | browser
+UI_MODE="${UI_MODE:-user}"   # dev | user
 OPENCLAW_HOME="${OPENCLAW_HOME:-/data}"
 OPENCLAW_CONFIG_PATH="${OPENCLAW_CONFIG_PATH:-$OPENCLAW_HOME/openclaw.json}"
 OPENCLAW_WORKSPACE="${OPENCLAW_WORKSPACE:-/workspace}"
@@ -84,16 +84,20 @@ fi
 
 exec dbus-run-session -- bash -lc "
   set -e
-  if [ '$UI_MODE' = 'full' ]; then
+  if [ '$UI_MODE' = 'dev' ]; then
     xfce4-terminal --disable-server --title='Container' &
   fi
 
-  CHROME_FLAGS='--no-first-run --disable-dev-shm-usage --user-data-dir=\$HOME/.config/google-chrome --disable-features=UseOzonePlatform --ozone-platform=x11 $DASHBOARD_URL'
-  if [ \"\$(id -u)\" = \"0\" ]; then
-    CHROME_FLAGS=\"--no-sandbox \$CHROME_FLAGS\"
+  if [ '$UI_MODE' = 'dev' ]; then
+    CHROME_FLAGS='--no-first-run --disable-dev-shm-usage --user-data-dir=\$HOME/.config/google-chrome --disable-features=UseOzonePlatform --ozone-platform=x11 $DASHBOARD_URL'
+    if [ \"\$(id -u)\" = \"0\" ]; then
+      CHROME_FLAGS=\"--no-sandbox \$CHROME_FLAGS\"
+    fi
+    (google-chrome-stable \$CHROME_FLAGS >/tmp/chrome.log 2>&1 &) || true
+  else
+    echo \"[clawbot] Dashboard: $DASHBOARD_URL\"
+    echo \"[clawbot] If you see 'pairing required': run ./pair.sh in the repo.\"
   fi
-
-  (google-chrome-stable \$CHROME_FLAGS >/tmp/chrome.log 2>&1 &) || true
 
   # Keep container alive even if browser exits
   tail -f /dev/null

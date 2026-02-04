@@ -6,8 +6,8 @@
 - открывается Chrome с Control UI (dashboard)
 
 Поддерживаются два режима:
-- **full** — терминал + браузер
-- **browser** — только браузер
+- **dev** — терминал + браузер (GUI)
+- **user** — без GUI, только ссылка на dashboard в лог
 
 ---
 
@@ -17,11 +17,11 @@
 ./init.sh
 # отредактируйте .env (OPENCLAW_GATEWAY_TOKEN и OPENROUTER_API_KEY обязательны)
 
-# режим full (терминал + браузер)
-docker compose --profile full up --build
+# режим dev (терминал + браузер)
+docker compose --profile dev up --build
 
-# режим browser (только браузер)
-docker compose --profile browser up --build
+# режим user (без GUI, только ссылка)
+docker compose --profile user up --build
 ```
 
 Если .env не настроен, контейнер запустится, но модель работать не будет.
@@ -69,8 +69,10 @@ disconnected (1008): pairing required
 выполните внутри контейнера:
 
 ```bash
-openclaw devices list
-openclaw devices approve <requestId>
+./pair.sh
+# или вручную:
+# openclaw devices list
+# openclaw devices approve <requestId>
 ```
 
 После approval браузер сохраняется как устройство, и pairing больше не нужен.

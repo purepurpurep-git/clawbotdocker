@@ -1,3 +1,3 @@
 # entrypoint.sh
 
-Точка входа контейнера. Генерирует/синхронизирует openclaw.json из .env, запускает gateway и открывает dashboard в Chrome.
+Точка входа контейнера. Синхронизирует конфиг OpenClaw из .env, запускает gateway. В dev открывает Chrome, в user выводит ссылку.

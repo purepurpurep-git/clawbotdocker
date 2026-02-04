@@ -1,7 +1,7 @@
 services:
-  clawbot-full:
+  clawbot-dev:
     build: .
-    container_name: clawbot-full
+    container_name: clawbot-dev
     env_file: .env
     environment:
       - UI_MODE=full
@@ -14,14 +14,14 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
     ports:
       - "${HOST_PORT:-18789}:${GATEWAY_PORT:-18789}"
-    profiles: ["full"]
+    profiles: ["dev"]
 
-  clawbot-browser:
+  clawbot-user:
     build: .
-    container_name: clawbot-browser
+    container_name: clawbot-user
     env_file: .env
     environment:
-      - UI_MODE=browser
+      - UI_MODE=user
     volumes:
       - ./data:/data
       - ./workspace:/workspace
@@ -29,4 +29,4 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
     ports:
       - "${HOST_PORT:-18789}:${GATEWAY_PORT:-18789}"
-    profiles: ["browser"]
+    profiles: ["user"]
