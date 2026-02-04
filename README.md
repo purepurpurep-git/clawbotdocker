@@ -1,9 +1,15 @@
-# clawbotdocker
+# clawbotdocker — контейнер OpenClaw с браузерным dashboard
 
-Готовый контейнер OpenClaw с двумя режимами запуска:
+Этот проект собирает Docker‑контейнер, в котором:
+- устанавливается OpenClaw CLI
+- автоматически стартует Gateway
+- открывается Chrome с Control UI (dashboard)
 
-1) **full** — терминал + браузер с открытым dashboard
-2) **browser** — только браузер с dashboard
+Поддерживаются два режима:
+- **full** — терминал + браузер
+- **browser** — только браузер
+
+---
 
 ## Быстрый старт
 
@@ -20,44 +26,88 @@ docker compose --profile browser up --build
 
 Если .env не настроен, контейнер запустится, но модель работать не будет.
 
-### Ссылки на dashboard
+---
 
-**Если контейнер запускается напрямую на хосте (Windows/Linux):**
+## Настройки (.env)
+
+Файл `.env` **не коммитится**. В репозитории есть `.env.example`.
+
+**Обязательные переменные:**
+- `OPENCLAW_GATEWAY_TOKEN` — токен доступа в dashboard
+- `OPENROUTER_API_KEY` — ключ модели по умолчанию (OpenRouter)
+
+**Рекомендуемые:**
+- `OPENCLAW_CONFIG_REWRITE=true` — всегда пересобирать openclaw.json из .env
+- `OPENCLAW_GATEWAY_BIND=custom` — чтобы gateway слушал 0.0.0.0 внутри контейнера
+
+**Опциональные:**
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_DM_POLICY`, `TELEGRAM_GROUP_POLICY`, `TELEGRAM_REQUIRE_MENTION`
+- `OPENCLAW_MODEL`
+
+---
+
+## Доступ к dashboard
+
+Если контейнер запущен на той же машине:
 ```
 http://127.0.0.1:${HOST_PORT}/?token=<OPENCLAW_GATEWAY_TOKEN>
 ```
 
-**Если контейнер запускается внутри другого контейнера (Docker-in-Docker):**
-- Внутри внешнего контейнера: `http://127.0.0.1:${HOST_PORT}/?token=<OPENCLAW_GATEWAY_TOKEN>`
-- С хоста: нужно пробросить порт внешнего контейнера: `-p ${HOST_PORT}:${HOST_PORT}`
+Если контейнер запускается внутри другого контейнера — пробросьте порт наружу
+и используйте тот же URL.
 
-Если порт занят — поменяйте `HOST_PORT` в `.env`.
+---
 
-## .env
+## Первое подключение: pairing
 
-Все токены и настройки хранятся в `.env`. Файл **не коммитится**.
-В репозитории хранится только `.env.example` с инструкциями.
+При первом открытии Control UI новый браузер требует **pairing**.
+Если видите сообщение:
+```
+disconnected (1008): pairing required
+```
+выполните внутри контейнера:
 
-Обязательные переменные:
-- `OPENCLAW_GATEWAY_TOKEN`
-- `OPENROUTER_API_KEY`
+```bash
+openclaw devices list
+openclaw devices approve <requestId>
+```
 
-Опционально:
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_*` политики
+После approval браузер сохраняется как устройство, и pairing больше не нужен.
 
-## GUI и буфер обмена
+---
 
-Контейнер рассчитан на GUI через WSLg или X11:
-- **Windows + WSLg**: монтируем `/mnt/wslg` (уже в compose). В WSLg общий буфер обмена с Windows работает автоматически.
-- **Linux X11**: монтируем `/tmp/.X11-unix`. Убедитесь, что X-сервер запущен (например, Xorg/Wayland с XWayland).
+## Переустановка / сброс
 
-Если вы запускаете контейнер НЕ в WSL/не в Linux с X11 — GUI окна не появятся.
+Полный сброс состояния:
+```bash
+docker compose down -v
+rm -rf data workspace
+```
 
-Для буфера обмена установлены `xclip` и `xsel`. Копирование из терминала не блокирует выполнение.
+Пересборка и запуск:
+```bash
+docker compose --profile browser up --build
+```
 
-## Примечания
+---
 
-- Gateway слушает `${GATEWAY_PORT}` внутри контейнера и пробрасывается на `HOST_PORT`.
-- Токен gateway обязателен, иначе dashboard не откроется.
-- Telegram включается автоматически при заполненном `TELEGRAM_BOT_TOKEN`.
+## Что внутри контейнера
+
+- **entrypoint.sh** синхронизирует `openclaw.json` из `.env`
+- запускает `openclaw gateway run`
+- стартует Chrome и открывает dashboard
+
+---
+
+## Описание файлов
+
+Для каждого файла есть отдельное описание в файле `<имя>.md`.
+Примеры:
+- `Dockerfile.md`
+- `entrypoint.sh.md`
+- `docker-compose.yml.md`
+- `data.md`
+- `workspace.md`
+
+Эти файлы создаются автоматически в репозитории.
