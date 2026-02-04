@@ -28,6 +28,18 @@ docker compose --profile user up --build
 
 ---
 
+## Важно про порты и режимы
+
+`dev` и `user` используют один и тот же порт `${HOST_PORT}` — **их нельзя запускать одновременно**.
+Перед переключением остановите текущий режим:
+```bash
+docker compose --profile dev down
+# или
+docker compose --profile user down
+```
+
+---
+
 ## Настройки (.env)
 
 Файл `.env` **не коммитится**. В репозитории есть `.env.example`.
