@@ -1,7 +1,5 @@
 # clawbotdocker — OpenClaw container with browser dashboard
 
-> English README: [README-eng.md](./README-eng.md)
-
 This project builds a Docker container that:
 - installs OpenClaw CLI
 - starts the Gateway automatically
