@@ -160,7 +160,5 @@ docker compose --profile dev up --build
 - `Dockerfile.md`
 - `entrypoint.sh.md`
 - `docker-compose.yml.md`
-- `data.md`
-- `workspace.md`
 
 Эти файлы создаются автоматически в репозитории.
